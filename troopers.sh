@@ -21,7 +21,7 @@ do
     curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/raid?$key
     curl -b ${prefix}cookie.$login http://$login.minitroopers.com/hq > index
 #    money=`grep money index -A1|tail -n1`
-#    echo "$login earn $money"
+#    echo "$login has earned $money coins"
     check
 done
 
