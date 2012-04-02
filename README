@@ -1,0 +1,2 @@
+chmod +x ./troopers.sh
+./troopers.sh [login] [password]
