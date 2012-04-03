@@ -8,7 +8,7 @@ function check {
     fi
 }
 
-prefix="/home/alter/troopers/"
+prefix="/home/alter/troopers/" #prefix should be with "/" in the end.
 login=$1
 password=$2
 curl -c ${prefix}cookie.$login -d "login=$login&pass=$password" http://$login.minitroopers.com/login
@@ -25,4 +25,4 @@ do
     check
 done
 
-rm -f index
+rm -f index cookie.*
