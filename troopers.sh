@@ -1,28 +1,45 @@
 #!/bin/bash
 
+# Check for raids
 function check {
     message=`egrep "(Another|Shortage)" index`
     if [ "$message" == "Shortage" ]
     then
-        return 0
+        mission
     fi
 }
 
-prefix="/home/alter/troopers/" #prefix should be with "/" in the end.
-login=$1
-password=$2
+# Get money
+function getmoney {
+    money=`grep money index -A1|tail -n1`
+    echo "$login has earned $money coins"
+}
+
+# Make 3 mission tasks
+function mission {
+    mission_key=`egrep -o -e "chk=[A-Za-z0-9]{6}" index |tail -n1`
+    for i in {1..3}
+    do
+        curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/mission?$mission_key
+    done
+}
+
+prefix="/home/alter/troopers/" # prefix should be with "/" in the end
+login=$1                       # from 1st argument
+password=$2                    # from 2nd argument 
+
 curl -c ${prefix}cookie.$login -d "login=$login&pass=$password" http://$login.minitroopers.com/login
 curl -b ${prefix}cookie.$login http://$login.minitroopers.com/hq > index
 check
 
+# Make raid tasks
 while [ $message == "Another" ]
 do
     key=`egrep -o -e "chk=[A-Za-z0-9]{6}" index |tail -n1`
     curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/raid?$key
     curl -b ${prefix}cookie.$login http://$login.minitroopers.com/hq > index
-#    money=`grep money index -A1|tail -n1`
-#    echo "$login has earned $money coins"
     check
 done
 
-rm -f index cookie.*
+rm -f ./index ./cookie.*
+exit 0
