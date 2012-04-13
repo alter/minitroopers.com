@@ -26,6 +26,18 @@ function mission {
     do
         curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/mission?$mission_key
     done
+    fight
+}
+
+# Make "fight" tasks
+function fight {
+    for i in {1..3}
+    do
+        curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/opp > opp$i
+        fight_key=`egrep -o -e "opp=[0-9]{5,7};chk=[a-zA-Z0-9]{6}" opp$i|head -n1`
+        echo $fight_key
+        curl -b ${prefix}cookie.$login http://$login.minitroopers.com/b/battle?$fight_key
+    done
 }
 
 # Login
@@ -42,5 +54,5 @@ do
     check
 done
 
-rm -f ./index ./cookie.*
+rm -f ./index ./opp # ./cookie.*
 exit 0
