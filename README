@@ -2,3 +2,5 @@ open my referral URL http://bl77.minitroopers.com
 register your own account
 chmod +x ./troopers.sh
 ./troopers.sh [login] [password]
+or if you don't have password
+./troopers.sh [login]
