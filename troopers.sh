@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefix="/home/alter/troopers/" # prefix should be with "/" in the end
+prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                       # 1st argument of cli
 password=$2                    # 2nd argument of cli
 exit_cycle=0
