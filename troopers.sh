@@ -6,7 +6,11 @@ password=$2                     # 2nd argument of cli
 curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
 exit_cycle=0
 selected_enemy=1                # if you want fight with specific avatar
-friend="aqswdefrgt"             # avatar's name
+friend=$3
+if [ -z "$friend" ]
+then
+  friend="roushet"             # avatar's name
+fi
 
 # Check for "raids"
 function check {
