@@ -76,5 +76,5 @@ done
 
 getMoneyRatio
 
-rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
+rm -f ${prefix}index ${prefix}opp ${prefix}cookie.* ${login}.*
 exit 0
