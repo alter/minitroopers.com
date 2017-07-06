@@ -27,7 +27,7 @@ function getMoneyRatio {
     local trooper_description="${prefix}${login}.trooper.0.html"
     curl $curl_opt http://$login.minitroopers.com/t/0 > $trooper_description
     local values_array=( $(egrep -e "^[0-9]+$" $trooper_description))
-    echo ${values_array[0]}/${values_array[1]}
+    echo "$login's money for next upgrade : ${values_array[0]}/${values_array[1]}"
 }
 
 # Make 3 "mission" tasks
