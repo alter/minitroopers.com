@@ -22,10 +22,12 @@ function check {
     fi
 }
 
-# Get money
-function getmoney {
-    money=`grep money ${prefix}index -A1|tail -n1`
-    echo "$login has earned $money coins"
+# Get the Money/Upgrade cost ratio of the first trooper
+function getMoneyRatio {
+    local trooper_description="${prefix}${login}.trooper.0.html"
+    curl $curl_opt http://$login.minitroopers.com/t/0 > $trooper_description
+    local values_array=( $(egrep -e "^[0-9]+$" $trooper_description))
+    echo ${values_array[0]}/${values_array[1]}
 }
 
 # Make 3 "mission" tasks
@@ -71,6 +73,8 @@ do
     curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
     check
 done
+
+getMoneyRatio
 
 rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
 exit 0
