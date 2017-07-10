@@ -11,6 +11,7 @@ if [ -z "$friend" ]
 then
   friend="roushet"             # avatar's name
 fi
+report="upgradable"            # (never|upgradable|always)
 
 # Check for "raids"
 function check {
@@ -26,8 +27,12 @@ function check {
 function getMoneyRatio {
     local trooper_description="${prefix}${login}.trooper.0.html"
     curl $curl_opt http://$login.minitroopers.com/t/0 > $trooper_description
-    local values_array=( $(egrep -e "^[0-9]+$" $trooper_description))
-    echo "$login's money for next upgrade : ${values_array[0]}/${values_array[1]}"
+    local values_array=( $(egrep -e "^[0-9]+$" $trooper_description) )
+    if [[ "$report" == "always" || \
+        ( "$report" == "upgradable" && \
+          "${values_array[0]}" -ge "${values_array[1]}" ) ]]; then
+        echo "$login's money for next upgrade : ${values_array[0]}/${values_array[1]}"
+    fi
 }
 
 # Make 3 "mission" tasks
@@ -74,7 +79,9 @@ do
     check
 done
 
-getMoneyRatio
+if [[ "$report" != "never" ]]; then
+    getMoneyRatio
+fi
 
 rm -f ${prefix}index ${prefix}opp ${prefix}cookie.* ${login}.*
 exit 0
