@@ -1,16 +1,24 @@
 #!/bin/bash
 
-prefix="`dirname $0`/"          # prefix should be with "/" in the end
-login=$1                        # 1st argument of cli
-password=$2                     # 2nd argument of cli
+## Defaults ##
+prefix="$(dirname "$0")/"          # prefix should be with "/" in the end
+selected_enemy=1                # if you want fight with specific avatar
+friend="roushet"
+
+## Reading config file ##
+# /!\ Security Warning /!\
+# This will execute any command present in the .cfg file
+source ${prefix}troopers.cfg
+
+## Reading CLI Args ##
+login="$1"                        # 1st argument of cli
+password="$2"                     # 2nd argument of cli
+[[ -n "$3" ]] && friend="$3"
+
+## Script locals ##
 curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
 exit_cycle=0
-selected_enemy=1                # if you want fight with specific avatar
-friend=$3
-if [ -z "$friend" ]
-then
-  friend="roushet"             # avatar's name
-fi
+
 
 # Check for "raids"
 function check {
