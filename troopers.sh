@@ -54,7 +54,7 @@ function fight {
 }
 
 # Login
-if [ $# -gt 1 ]
+if [[ -n $password ]]
 then
     curl $curl_opt -d "login=$login&pass=$password" http://$login.minitroopers.com/login
 else
