@@ -8,13 +8,10 @@ exit_cycle=0
 friend=$3
 
 # Check for "raids"
-function check {
-    message=`egrep "(Another|Shortage)" ${prefix}index`
-    if [ "$message" == "Shortage" ] || [ -z "$message" ]
-    then
-        exit_cycle=1
-        mission
-    fi
+function hasRecruits {
+    curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
+    local message=`egrep "(Another|Shortage)" ${prefix}index`
+    return [ "$message" == "Shortage" ] || [ -z "$message" ]
 }
 
 # Get money
@@ -25,27 +22,31 @@ function getmoney {
 
 # Make 3 "mission" tasks
 function mission {
-    mission_key=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
     for i in {1..3}
     do
-        curl $curl_opt http://$login.minitroopers.com/b/mission?$mission_key
+        curl $curl_opt http://$login.minitroopers.com/b/mission?$chk
     done
-    fight
 }
 
 # Make "fight" tasks
 function fight {
     for i in {1..3}
     do
-        curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
-        chk=`egrep -o -e "chk=[a-zA-Z0-9]{6}" ${prefix}opp|head -n1`
         if [[ -z "$friend" ]]
         then
+            curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
             opp=`egrep -o -e "opp=[0-9]{5,7}" ${prefix}opp|head -n1`
             curl $curl_opt "http://$login.minitroopers.com/b/battle?$opp;$chk"
         else
             curl $curl_opt --data="chk=$chk&friend=$friend" "http://$login.minitroopers.com/b/battle"
         fi
+    done
+}
+
+function raid {
+    while hasRecruits
+    do
+        curl $curl_opt http://$login.minitroopers.com/b/raid?$chk
     done
 }
 
@@ -56,17 +57,15 @@ then
 else
     curl $curl_opt -d "login=$login" http://$login.minitroopers.com/login
 fi
-curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
-check
 
-# Make raid tasks
-while [ "$exit_cycle" != "1" ]
-do
-    key=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
-    curl $curl_opt http://$login.minitroopers.com/b/raid?$key
-    curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
-    check
-done
+curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
+chk=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
+
+fight
+
+mission
+
+raid
 
 rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
 exit 0
