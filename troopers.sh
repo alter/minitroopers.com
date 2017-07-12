@@ -5,12 +5,7 @@ login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
 curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
 exit_cycle=0
-selected_enemy=1                # if you want fight with specific avatar
 friend=$3
-if [ -z "$friend" ]
-then
-  friend="roushet"             # avatar's name
-fi
 
 # Check for "raids"
 function check {
@@ -43,12 +38,13 @@ function fight {
     for i in {1..3}
     do
         curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
-        fight_key=`egrep -o -e "opp=[0-9]{5,7};chk=[a-zA-Z0-9]{6}" ${prefix}opp|head -n1`
-        if [ $selected_enemy -ne 1 ]
+        chk=`egrep -o -e "chk=[a-zA-Z0-9]{6}" ${prefix}opp|head -n1`
+        if [[ -z "$friend" ]]
         then
-            curl $curl_opt http://$login.minitroopers.com/b/battle?$fight_key
+            opp=`egrep -o -e "opp=[0-9]{5,7}" ${prefix}opp|head -n1`
+            curl $curl_opt "http://$login.minitroopers.com/b/battle?$opp;$chk"
         else
-            curl $curl_opt "http://$login.minitroopers.com/b/battle?$fight_key&friend=$friend"
+            curl $curl_opt --data="chk=$chk&friend=$friend" "http://$login.minitroopers.com/b/battle"
         fi
     done
 }
