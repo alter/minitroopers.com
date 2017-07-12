@@ -11,7 +11,8 @@ friend=$3
 function hasRecruits {
     curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
     local message=`egrep "(Another|Shortage)" ${prefix}index`
-    return [ "$message" == "Shortage" ] || [ -z "$message" ]
+    [[ "$message" == "Another" ]]
+    return $?
 }
 
 # Get money
@@ -32,13 +33,13 @@ function mission {
 function fight {
     for i in {1..3}
     do
+        curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
+        key=`egrep -o -e "opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}" ${prefix}opp|head -n1`
         if [[ -z "$friend" ]]
         then
-            curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
-            opp=`egrep -o -e "opp=[0-9]{5,7}" ${prefix}opp|head -n1`
-            curl $curl_opt "http://$login.minitroopers.com/b/battle?$opp;$chk"
+            curl $curl_opt "http://$login.minitroopers.com/b/battle?$key"
         else
-            curl $curl_opt --data="chk=$chk&friend=$friend" "http://$login.minitroopers.com/b/battle"
+            curl $curl_opt "http://$login.minitroopers.com/b/battle?$key&friend=$friend"
         fi
     done
 }
