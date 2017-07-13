@@ -6,7 +6,6 @@ prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
 curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
-exit_cycle=0
 friend=$3
 
 # Check for "raids"
@@ -31,18 +30,22 @@ function mission {
     done
 }
 
-# Make "fight" tasks
-function fight {
-    for i in {1..3}
-    do
-        curl $curl_opt http://$login.minitroopers.com/b/opp > ${prefix}opp
-        key=`egrep -o -e "opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}" ${prefix}opp|head -n1`
-        if [[ -z "$friend" ]]
-        then
-            curl $curl_opt "http://$login.minitroopers.com/b/battle?$key"
-        else
-            curl $curl_opt "http://$login.minitroopers.com/b/battle?$key&friend=$friend"
-        fi
+function getFightKey {
+    curl $curl_opt "http://$login.minitroopers.com/b/opp" \
+        | egrep --only-matching --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
+        | head --lines=1
+}
+
+function fightRandom {
+    for i in {1..3}; do
+        local key="$(getFightKey)"
+        curl $curl_opt "http://$login.minitroopers.com/b/battle?$key"
+    done
+}
+
+function fightFriend {
+    for i in {1..3}; do
+        curl $curl_opt "http://$login.minitroopers.com/b/battle?$chk&friend=$1"
     done
 }
 
@@ -54,7 +57,7 @@ function raid {
 }
 
 function cleanup {
-    rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
+    rm -f ${prefix}index ${prefix}cookie.*
 }
 
 # Login
@@ -68,7 +71,11 @@ fi
 curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
 chk=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
 
-fight
+if [[ -z "$friend" ]]; then
+    fightRandom
+else
+    fightFriend $friend
+fi
 
 mission
 
