@@ -1,5 +1,7 @@
 #!/bin/bash
 
+trap "cleanup" EXIT
+
 prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
@@ -51,6 +53,10 @@ function raid {
     done
 }
 
+function cleanup {
+    rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
+}
+
 # Login
 if [[ -n $password ]]
 then
@@ -68,5 +74,4 @@ mission
 
 raid
 
-rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
 exit 0
