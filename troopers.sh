@@ -7,10 +7,11 @@ login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
 curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
 friend=$3
+site="http://$login.minitroopers.com"
 
 # Check for "raids"
 function hasRecruits {
-    curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
+    curl $curl_opt $site/hq > ${prefix}index
     local message=`egrep "(Another|Shortage)" ${prefix}index`
     [[ "$message" == "Another" ]]
     return $?
@@ -26,12 +27,12 @@ function getmoney {
 function mission {
     for i in {1..3}
     do
-        curl $curl_opt http://$login.minitroopers.com/b/mission?$chk
+        curl $curl_opt $site/b/mission?$chk
     done
 }
 
 function getFightKey {
-    curl $curl_opt "http://$login.minitroopers.com/b/opp" \
+    curl $curl_opt "$site/b/opp" \
         | egrep --only-matching --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
         | head --lines=1
 }
@@ -39,20 +40,20 @@ function getFightKey {
 function fightRandom {
     for i in {1..3}; do
         local key="$(getFightKey)"
-        curl $curl_opt "http://$login.minitroopers.com/b/battle?$key"
+        curl $curl_opt "$site/b/battle?$key"
     done
 }
 
 function fightFriend {
     for i in {1..3}; do
-        curl $curl_opt "http://$login.minitroopers.com/b/battle?$chk&friend=$1"
+        curl $curl_opt "$site/b/battle?$chk&friend=$1"
     done
 }
 
 function raid {
     while hasRecruits
     do
-        curl $curl_opt http://$login.minitroopers.com/b/raid?$chk
+        curl $curl_opt $site/b/raid?$chk
     done
 }
 
@@ -63,12 +64,12 @@ function cleanup {
 # Login
 if [[ -n $password ]]
 then
-    curl $curl_opt -d "login=$login&pass=$password" http://$login.minitroopers.com/login
+    curl $curl_opt -d "login=$login&pass=$password" $site/login
 else
-    curl $curl_opt -d "login=$login" http://$login.minitroopers.com/login
+    curl $curl_opt -d "login=$login" $site/login
 fi
 
-curl $curl_opt http://$login.minitroopers.com/hq > ${prefix}index
+curl $curl_opt $site/hq > ${prefix}index
 chk=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
 
 if [[ -z "$friend" ]]; then
