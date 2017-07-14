@@ -11,23 +11,15 @@ site="http://$login.minitroopers.com"
 
 # Check for "raids"
 function hasRecruits {
-    curl $curl_opt $site/hq > ${prefix}index
-    local message=`egrep "(Another|Shortage)" ${prefix}index`
-    [[ "$message" == "Another" ]]
+    curl $curl_opt "$site/hq" | grep "Another" > /dev/null
     return $?
-}
-
-# Get money
-function getmoney {
-    money=`grep money ${prefix}index -A1|tail -n1`
-    echo "$login has earned $money coins"
 }
 
 # Make 3 "mission" tasks
 function mission {
     for i in {1..3}
     do
-        curl $curl_opt $site/b/mission?$chk
+        curl $curl_opt "$site/b/mission?$chk"
     done
 }
 
@@ -35,6 +27,12 @@ function getFightKey {
     curl $curl_opt "$site/b/opp" \
         | egrep --only-matching --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
         | head --lines=1
+}
+
+function getCheck {
+    curl $curl_opt "$site/hq" \
+        | egrep --only-matching --regexp='chk=[A-Za-z0-9]{6}'
+        | tail --lines=1
 }
 
 function fightRandom {
@@ -53,29 +51,28 @@ function fightFriend {
 function raid {
     while hasRecruits
     do
-        curl $curl_opt $site/b/raid?$chk
+        curl $curl_opt "$site/b/raid?$chk"
     done
 }
 
 function cleanup {
-    rm -f ${prefix}index ${prefix}cookie.*
+    rm -f ${prefix}cookie.*
 }
 
 # Login
 if [[ -n $password ]]
 then
-    curl $curl_opt -d "login=$login&pass=$password" $site/login
+    curl $curl_opt -d "login=$login&pass=$password" "$site/login"
 else
-    curl $curl_opt -d "login=$login" $site/login
+    curl $curl_opt -d "login=$login" "$site/login"
 fi
 
-curl $curl_opt $site/hq > ${prefix}index
-chk=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
+chk="$(getCheck)"
 
 if [[ -z "$friend" ]]; then
     fightRandom
 else
-    fightFriend $friend
+    fightFriend "$friend"
 fi
 
 mission
