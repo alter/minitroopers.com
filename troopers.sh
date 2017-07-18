@@ -5,9 +5,10 @@ trap "cleanup" EXIT
 prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
-curl_opt="-s -b ${prefix}cookie.$login"
 friend=$3
 site="http://$login.minitroopers.com"
+cookie_file="$(mktemp -t \"$login.XXXXXX\" --suffix='.cookie')"
+curl_opt="-s -b $cookie_file"
 
 # Check for "raids"
 function hasRecruits {
@@ -56,15 +57,15 @@ function raid {
 }
 
 function cleanup {
-    rm -f ${prefix}cookie.*
+    rm --force "$cookie_file"
 }
 
 # Login
 if [[ -n $password ]]
 then
-    curl -c ${prefix}cookie.$login -d "login=$login&pass=$password" "$site/login"
+    curl -c "$cookie_file" -d "login=$login&pass=$password" "$site/login"
 else
-    curl -c ${prefix}cookie.$login -d "login=$login" "$site/login"
+    curl -c "$cookie_file" -d "login=$login" "$site/login"
 fi
 
 chk="$(getCheck)"
