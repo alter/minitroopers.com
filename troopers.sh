@@ -74,10 +74,12 @@ if [[ -z "$friend" ]]; then
     fightRandom
 else
     fightFriend "$friend"
-fi
+fi &
 
-mission
+mission &
 
-raid
+raid &
+
+wait
 
 exit 0
