@@ -7,7 +7,7 @@ login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
 friend=$3
 site="http://$login.minitroopers.com"
-cookie_file="$(mktemp -t \"$login.XXXXXX\" --suffix='.cookie')"
+cookie_file="$(mktemp -t "$login.XXXXXX" --suffix='.cookie')"
 curl_opt="-s -b $cookie_file"
 
 # Check for "raids"
@@ -20,7 +20,7 @@ function hasRecruits {
 function mission {
     for i in {1..3}
     do
-        curl $curl_opt "$site/b/mission?$chk"
+        curl $curl_opt "$site/b/mission?chk=$chk"
     done
 }
 
@@ -31,9 +31,8 @@ function getFightKey {
 }
 
 function getCheck {
-    curl $curl_opt "$site/hq" \
-        | egrep --only-matching --regexp='chk=[A-Za-z0-9]{6}'
-        | tail --lines=1
+    local key="$(egrep --only-matching --regexp='keyy6:[A-Za-z0-9]{6}y[0-9]:' $1)"
+    echo ${key:6:6}
 }
 
 function fightRandom {
@@ -45,14 +44,14 @@ function fightRandom {
 
 function fightFriend {
     for i in {1..3}; do
-        curl $curl_opt "$site/b/battle?$chk&friend=$1"
+        curl $curl_opt "$site/b/battle?chk=$chk&friend=$1"
     done
 }
 
 function raid {
     while hasRecruits
     do
-        curl $curl_opt "$site/b/raid?$chk"
+        curl $curl_opt "$site/b/raid?chk=$chk"
     done
 }
 
@@ -68,7 +67,7 @@ else
     curl -c "$cookie_file" -d "login=$login" "$site/login"
 fi
 
-chk="$(getCheck)"
+chk="$(getCheck "$cookie_file")"
 
 if [[ -z "$friend" ]]; then
     fightRandom
