@@ -5,7 +5,7 @@ trap "cleanup" EXIT
 prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
-curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
+curl_opt="-s -b ${prefix}cookie.$login"
 friend=$3
 site="http://$login.minitroopers.com"
 
@@ -62,9 +62,9 @@ function cleanup {
 # Login
 if [[ -n $password ]]
 then
-    curl $curl_opt -d "login=$login&pass=$password" "$site/login"
+    curl -c ${prefix}cookie.$login -d "login=$login&pass=$password" "$site/login"
 else
-    curl $curl_opt -d "login=$login" "$site/login"
+    curl -c ${prefix}cookie.$login -d "login=$login" "$site/login"
 fi
 
 chk="$(getCheck)"
