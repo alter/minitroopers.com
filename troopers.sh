@@ -23,15 +23,22 @@ function check {
     fi
 }
 
+# Greps the amounts of money from page of the specified trooper.
+# Basically, the current amount of money, and the amount needed
+# to upgrade
+function grepTrooper {
+    curl $curl_opt "http://$login.minitroopers.com/t/$1" \
+        | egrep -e '^[0-9]+$'
+}
+
 # Get the Money/Upgrade cost ratio of the first trooper
 function getMoneyRatio {
-    local trooper_description="${prefix}${login}.trooper.0.html"
-    curl $curl_opt http://$login.minitroopers.com/t/0 > $trooper_description
-    local values_array=( $(egrep -e "^[0-9]+$" $trooper_description) )
+    local money upgrade_cost
+    read money upgrade_cost <<< $(grepTrooper 0)
     if [[ "$report" == "always" || \
         ( "$report" == "upgradable" && \
-          "${values_array[0]}" -ge "${values_array[1]}" ) ]]; then
-        echo "$login's money for next upgrade : ${values_array[0]}/${values_array[1]}"
+          "$money" -ge "$upgrade_cost" ) ]]; then
+        echo "$login's money for next upgrade : $money/$upgrade_cost"
     fi
 }
 
