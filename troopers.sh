@@ -2,17 +2,17 @@
 
 trap "cleanup" EXIT
 
-prefix="`dirname $0`/"          # prefix should be with "/" in the end
 login=$1                        # 1st argument of cli
 password=$2                     # 2nd argument of cli
 friend=$3
 site="http://$login.minitroopers.com"
 cookie_file="$(mktemp -t "$login.XXXXXX" --suffix='.cookie')"
-curl_opt="-s -b $cookie_file"
+curl="curl --silent --cookie "$cookie_file""
+egrep="grep --extended-regexp --only-matching"
 
 # Check for "raids"
 function hasRecruits {
-    curl $curl_opt "$site/hq" | grep "Another" > /dev/null
+    $curl "$site/hq" | grep "Another" > /dev/null
     return $?
 }
 
@@ -20,38 +20,38 @@ function hasRecruits {
 function mission {
     for i in {1..3}
     do
-        curl $curl_opt "$site/b/mission?chk=$chk"
+        $curl "$site/b/mission?chk=$chk"
     done
 }
 
-function getFightKey {
-    curl $curl_opt "$site/b/opp" \
-        | egrep --only-matching --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
-        | head --lines=1
+function getCheck {
+    local key="$($egrep --regexp='keyy6:[A-Za-z0-9]{6}y[0-9]:' $1)"
+    echo ${key:6:6}
 }
 
-function getCheck {
-    local key="$(egrep --only-matching --regexp='keyy6:[A-Za-z0-9]{6}y[0-9]:' $1)"
-    echo ${key:6:6}
+function getFightKey {
+    $curl "$site/b/opp" \
+        | $egrep --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
+        | head --lines=1
 }
 
 function fightRandom {
     for i in {1..3}; do
         local key="$(getFightKey)"
-        curl $curl_opt "$site/b/battle?$key"
+        $curl "$site/b/battle?$key"
     done
 }
 
 function fightFriend {
     for i in {1..3}; do
-        curl $curl_opt "$site/b/battle?chk=$chk&friend=$1"
+        $curl "$site/b/battle?chk=$chk&friend=$1"
     done
 }
 
 function raid {
     while hasRecruits
     do
-        curl $curl_opt "$site/b/raid?chk=$chk"
+        $curl "$site/b/raid?chk=$chk"
     done
 }
 
@@ -59,16 +59,21 @@ function cleanup {
     rm --force "$cookie_file"
 }
 
+function login {
+    curl --silent --cookie-jar "$cookie_file" --data "$1" "$site/login"
+}
+
 # Login
 if [[ -n $password ]]
 then
-    curl -c "$cookie_file" -d "login=$login&pass=$password" "$site/login"
+    login "login=$login&pass=$password"
 else
-    curl -c "$cookie_file" -d "login=$login" "$site/login"
+    login "login=$login"
 fi
 
 chk="$(getCheck "$cookie_file")"
 
+# Battle
 if [[ -z "$friend" ]]; then
     fightRandom
 else
