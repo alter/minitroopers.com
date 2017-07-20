@@ -30,7 +30,7 @@ function getCheck {
 }
 
 function getFightKey {
-    $curl "$site/b/opp" \
+    $curl --cookie-jar "$cookie_file" "$site/b/opp" \
         | $egrep --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
         | head --lines=1
 }
