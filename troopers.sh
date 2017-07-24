@@ -1,96 +1,89 @@
 #!/bin/bash
 
-## Defaults ##
-prefix="$(dirname "$0")/"          # prefix should be with "/" in the end
-selected_enemy=1                # if you want fight with specific avatar
-friend="roushet"
+trap "cleanup" EXIT
 
-## Reading config file ##
-# /!\ Security Warning /!\
-# This will execute any command present in the .cfg file
-source ${prefix}troopers.cfg
-
-## Reading CLI Args ##
-login="$1"                        # 1st argument of cli
-password="$2"                     # 2nd argument of cli
-[[ -n "$3" ]] && friend="$3"
-
-## Script locals ##
-curl_opt="-s -b ${prefix}cookie.$login -c ${prefix}cookie.$login"
-exit_cycle=0
-
-
-## Culture Specific ##
-ext=${4:-com}
-Another="Another"
-Shortage="Shortage"
-
-## Reading culture file ##
-# /!\ Security Warning /!\
-# This will execute any command present in the .culture file
-source ${prefix}${ext}.culture
-
-
+login=$1                        # 1st argument of cli
+password=$2                     # 2nd argument of cli
+friend=$3
+site="http://$login.minitroopers.com"
+cookie_file="$(mktemp -t "$login.XXXXXX" --suffix='.cookie')"
+curl="curl --silent --cookie "$cookie_file""
+egrep="grep --extended-regexp --only-matching"
 
 # Check for "raids"
-function check {
-    message=`egrep "($Another|$Shortage)" ${prefix}index`
-    if [ "$message" == "$Shortage" ] || [ -z "$message" ]
-    then
-        exit_cycle=1
-        mission
-    fi
-}
-
-# Get money
-function getmoney {
-    money=`grep money ${prefix}index -A1|tail -n1`
-    echo "$login has earned $money coins"
+function hasRecruits {
+    $curl "$site/hq" | grep "Another" > /dev/null
+    return $?
 }
 
 # Make 3 "mission" tasks
 function mission {
-    mission_key=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
     for i in {1..3}
     do
-        curl $curl_opt http://$login.minitroopers.$ext/b/mission?$mission_key
+        $curl "$site/b/mission?chk=$chk"
     done
-    fight
 }
 
-# Make "fight" tasks
-function fight {
-    for i in {1..3}
-    do
-        curl $curl_opt http://$login.minitroopers.$ext/b/opp > ${prefix}opp
-        fight_key=`egrep -o -e "opp=[0-9]{5,7};chk=[a-zA-Z0-9]{6}" ${prefix}opp|head -n1`
-        if [ $selected_enemy -ne 1 ]
-        then
-            curl $curl_opt http://$login.minitroopers.$ext/b/battle?$fight_key
-        else
-            curl $curl_opt "http://$login.minitroopers.$ext/b/battle?$fight_key&friend=$friend"
-        fi
+function getCheck {
+    local key="$($egrep --regexp='keyy6:[A-Za-z0-9]{6}y[0-9]:' $1)"
+    echo ${key:6:6}
+}
+
+function getFightKey {
+    $curl --cookie-jar "$cookie_file" "$site/b/opp" \
+        | $egrep --regexp='opp=[0-9]{5,7};chk=[A-Za-z0-9]{6}' \
+        | head --lines=1
+}
+
+function fightRandom {
+    for i in {1..3}; do
+        local key="$(getFightKey)"
+        $curl "$site/b/battle?$key"
     done
+}
+
+function fightFriend {
+    for i in {1..3}; do
+        $curl "$site/b/battle?chk=$chk&friend=$1"
+    done
+}
+
+function raid {
+    while hasRecruits
+    do
+        $curl "$site/b/raid?chk=$chk"
+    done
+}
+
+function cleanup {
+    rm --force "$cookie_file"
+}
+
+function login {
+    curl --silent --cookie-jar "$cookie_file" --data "$1" "$site/login"
 }
 
 # Login
-if [ $# -gt 1 ]
+if [[ -n $password ]]
 then
-    curl $curl_opt -d "login=$login&pass=$password" http://$login.minitroopers.$ext/login
+    login "login=$login&pass=$password"
 else
-    curl $curl_opt -d "login=$login" http://$login.minitroopers.$ext/login
+    login "login=$login"
 fi
-curl $curl_opt http://$login.minitroopers.$ext/hq > ${prefix}index
-check
 
-# Make raid tasks
-while [ "$exit_cycle" != "1" ]
-do
-    key=`egrep -o -e "chk=[A-Za-z0-9]{6}" ${prefix}index |tail -n1`
-    curl $curl_opt http://$login.minitroopers.$ext/b/raid?$key
-    curl $curl_opt http://$login.minitroopers.$ext/hq > ${prefix}index
-    check
-done
+chk="$(getCheck "$cookie_file")"
 
-rm -f ${prefix}index ${prefix}opp ${prefix}cookie.*
+# Battle
+if [[ -z "$friend" ]]; then
+    fightRandom
+else
+    fightFriend "$friend"
+fi &
+
+mission &
+
+raid &
+
+wait
+
 exit 0
