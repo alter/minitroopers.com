@@ -42,8 +42,10 @@ function grepTrooper {
 
 # Get the Money/Upgrade cost ratio of the first trooper
 function getMoneyRatio {
-    local money upgrade_cost
-    read money upgrade_cost <<< $(grepTrooper 0)
+	local ratio=($(grepTrooper 0))
+	local money="${ratio[0]}"
+	local upgrade_cost="${ratio[1]}"
+
     if [[ "$report" == "always" || \
         ( "$report" == "upgradable" && \
           "$money" -ge "$upgrade_cost" ) ]]; then
