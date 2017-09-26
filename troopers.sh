@@ -2,6 +2,16 @@
 
 trap "cleanup" EXIT
 
+## Dependency checks ##
+for command in 'grep' 'curl'; do
+	which "$command" > /dev/null
+	if [[ $? -gt 0 ]]; then
+		echo "error: $0 needs $command to execute"
+		exit 2
+	fi
+done
+
+
 ## Defaults ##
 prefix="$(dirname "$0")"
 ext="com"
