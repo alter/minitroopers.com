@@ -1,45 +1,8 @@
 #!/bin/bash
 
-trap "cleanup" EXIT
 
-## Dependency checks ##
-for command in 'grep' 'curl'; do
-	which "$command" > /dev/null
-	if [[ $? -gt 0 ]]; then
-		echo "error: $0 needs $command to execute"
-		exit 2
-	fi
-done
-
-
-## Defaults ##
-prefix="$(dirname "$0")"
-ext="com"
-Another="Another"
-report="upgradable"            # (never|upgradable|always)
-
-## Reading config file ##
-# /!\ Security Warning /!\
-# This will execute any command present in the .cfg file
-source $prefix/troopers.cfg
-
-## Reading culture file ##
-# /!\ Security Warning /!\
-# This will execute any command present in the .culture file
-source $prefix/$ext.culture
-
-## Reading CLI ##
-login=$1                        # 1st argument of cli
-password=$2                     # 2nd argument of cli
-[[ -n "$3" ]] && friend="$3"
-
-## Script Locals ##
-site="http://$login.minitroopers.$ext"
-cookie_file="$(mktemp -t "$login.XXXXXX" --suffix='.cookie')"
-curl="curl --silent --cookie $cookie_file"
-egrep="grep --extended-regexp --only-matching"
-
-
+### FUNCTIONS ###
+# Feel free to skip right down to VARIABLES to do some tweaking
 
 
 # Greps the amounts of money from the page of the specified trooper.
@@ -108,13 +71,57 @@ function raid {
     done
 }
 
+function login {
+    curl --silent --cookie-jar "$cookie_file" --data "$1" "$site/login"
+}
+
 function cleanup {
     rm --force "$cookie_file"
 }
 
-function login {
-    curl --silent --cookie-jar "$cookie_file" --data "$1" "$site/login"
-}
+trap "cleanup" EXIT
+
+
+
+### VARIABLES ###
+
+
+
+## Defaults ##
+prefix="$(dirname "$0")"
+ext="com"
+Another="Another"
+report="upgradable"            # (never|upgradable|always)
+
+## Reading config files ##
+# /!\ Security Warning /!\
+# `source` will execute any command present in the file
+source $prefix/troopers.cfg
+source $prefix/$ext.culture
+
+## Reading CLI ##
+login=$1                        # 1st argument of cli
+password=$2                     # 2nd argument of cli
+[[ -n "$3" ]] && friend="$3"
+
+## Script Locals ##
+site="http://$login.minitroopers.$ext"
+cookie_file="$(mktemp -t "$login.XXXXXX" --suffix='.cookie')"
+curl="curl --silent --cookie $cookie_file"
+egrep="grep --extended-regexp --only-matching"
+
+
+
+
+## Dependency checks ##
+for command in 'grep' 'curl'; do
+	which "$command" > /dev/null
+	if [[ $? -gt 0 ]]; then
+		echo "error: $0 needs $command to execute"
+		exit 2
+	fi
+done
+
 
 # Login
 if [[ -n $password ]]
